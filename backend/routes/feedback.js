@@ -187,9 +187,12 @@ router.get('/track/:id', async (req, res) => {
     const { id } = req.params;
 
     // simple safety check
-    if (!id) {
-      return res.status(400).json({ error: 'No ID provided' });
-    }
+    // Check if ID looks like UUID
+const isUUID = /^[0-9a-fA-F-]{36}$/.test(id);
+
+if (!isUUID) {
+  return res.status(400).json({ error: 'Invalid feedback ID' });
+}
 
     const result = await query(
       `SELECT id, title, status, created_at, updated_at
