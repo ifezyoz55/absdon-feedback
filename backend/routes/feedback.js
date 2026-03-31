@@ -184,11 +184,18 @@ router.get('/', authenticate, [
 // ─── GET /api/feedback/track/:id ── Public Tracking ──────
 router.get('/track/:id', async (req, res) => {
   try {
+    const { id } = req.params;
+
+    // simple safety check
+    if (!id) {
+      return res.status(400).json({ error: 'No ID provided' });
+    }
+
     const result = await query(
       `SELECT id, title, status, created_at, updated_at
        FROM feedback
        WHERE id = $1`,
-      [req.params.id]
+      [id]
     );
 
     if (result.rows.length === 0) {
@@ -196,8 +203,9 @@ router.get('/track/:id', async (req, res) => {
     }
 
     res.json(result.rows[0]);
+
   } catch (err) {
-    console.error('[Track Feedback]', err);
+    console.error('TRACK ERROR:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
