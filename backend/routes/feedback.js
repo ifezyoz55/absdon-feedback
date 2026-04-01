@@ -69,7 +69,8 @@ router.post('/', checkSubmissionLimit, [
 } = req.body;
 
 const safeTags = Array.isArray(tags) ? tags : [];
-
+const sessionId = req.headers['x-session-id'] || null;
+const ipHash = req.ip || null;
   try {
     // Insert feedback (team auto-assigned by DB trigger)
     const insertResult = await query(
@@ -101,13 +102,13 @@ const safeTags = Array.isArray(tags) ? tags : [];
     // Async AI processing — don't block the response
     processFeedback({ title, description, category, type, severity })
       .then(async ({ summary, tags: aiTags }) => {
-        await query(
-          `UPDATE feedback
-           SET ai_summary = $1, ai_tags = $2, ai_processed = TRUE
-           WHERE id = $3`,
-          [summary, JSON.stringify(aiTags), feedback.id]
-        );
-      })
+  await query(
+    `UPDATE feedback
+     SET ai_summary = $1, ai_tags = $2, ai_processed = TRUE
+     WHERE id = $3`,
+    [summary, JSON.stringify(aiTags || []), feedback.id]
+  );
+})
       .catch(err => console.error('[AI Async]', err.message));
 
     res.status(201).json({
