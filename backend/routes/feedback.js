@@ -90,7 +90,11 @@ const ipHash = req.ip || null;
     const feedback = insertResult.rows[0];
 
     // Increment rate-limit counter
-    await incrementSubmissionCount(sessionId, ipHash);
+    try {
+  await incrementSubmissionCount(sessionId, ipHash);
+} catch (e) {
+  console.log("Rate limit failed:", e.message);
+}
 
     // Create in-app notification record (for polling)
     await query(
@@ -118,9 +122,9 @@ const ipHash = req.ip || null;
       sessionId, // client stores this for notification polling
     });
   } catch (err) {
-    console.error('[Feedback Submit]', err);
-    res.status(500).json({ error: 'Failed to submit feedback.' });
-  }
+  console.error('[Feedback Submit FULL ERROR]', err);
+  res.status(500).json({ error: err.message });
+}
 });
 
 // ─── GET /api/feedback ─── Dashboard List (auth) ─────────
@@ -345,6 +349,8 @@ router.get('/notifications/:sessionId', async (req, res) => {
 
 // ─── POST /api/feedback/notifications/:id/read ───────────
 router.post('/notifications/:id/read', async (req, res) => {
+  const sessionId = req.headers['x-session-id'] || null;
+const ipHash = req.ip || null;
   await query('UPDATE notifications SET read = TRUE WHERE id = $1', [req.params.id]);
   res.json({ ok: true });
 });
