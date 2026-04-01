@@ -55,11 +55,20 @@ router.post('/', checkSubmissionLimit, [
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
   const {
-    submitterType, username, walletAddress, projectLink, additionalMetrics,
-    title, description, category, type, severity, tags = [],
-  } = req.body;
+  submitterType,
+  username,
+  walletAddress,
+  projectLink,
+  additionalMetrics,
+  title,
+  description,
+  category,
+  type,
+  severity,
+  tags = [],
+} = req.body;
 
-  const { sessionId, ipHash } = req.spamMeta || {};
+const safeTags = Array.isArray(tags) ? tags : [];
 
   try {
     // Insert feedback (team auto-assigned by DB trigger)
@@ -73,7 +82,7 @@ router.post('/', checkSubmissionLimit, [
         submitterType, username || null, walletAddress || null,
         projectLink || null, additionalMetrics || null,
         title, description, category, type, severity,
-        tags, sessionId || null, ipHash || null,
+        JSON.stringify(safeTags), sessionId || null, ipHash || null,
       ]
     );
 
@@ -96,7 +105,7 @@ router.post('/', checkSubmissionLimit, [
           `UPDATE feedback
            SET ai_summary = $1, ai_tags = $2, ai_processed = TRUE
            WHERE id = $3`,
-          [summary, aiTags, feedback.id]
+          [summary, JSON.stringify(aiTags), feedback.id]
         );
       })
       .catch(err => console.error('[AI Async]', err.message));
